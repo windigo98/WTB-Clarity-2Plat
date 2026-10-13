@@ -6,18 +6,26 @@ import '../models/app_data.dart';
 import '../painters/painters.dart';
 import '../state/app_state.dart';
 import '../theme/clarity_theme.dart';
+import 'chrome.dart';
 
 class CopyrightFooter extends StatelessWidget {
-  const CopyrightFooter({super.key});
+  const CopyrightFooter({super.key, this.onArt = false});
+
+  final bool onArt;
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(12, 4, 12, 6),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
       child: Text(
         '© 2026 WingsCrew. All rights reserved.',
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: onArt ? const Color(0xFFFFF6EA) : const Color(0xFF57534E),
+          shadows: onArt ? const [Shadow(color: Color(0xAA000000), blurRadius: 6)] : null,
+        ),
       ),
     );
   }
@@ -47,23 +55,34 @@ class ClarityPage extends StatelessWidget {
     required this.body,
     this.actions,
     this.floating,
+    this.scene = Scene.night,
   });
 
   final String title;
   final Widget body;
   final List<Widget>? actions;
   final Widget? floating;
+  final Scene scene;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(title: Text(title), actions: actions),
       floatingActionButton: floating,
-      body: Column(
-        children: [
-          Expanded(child: PageFrame(child: body)),
-          const CopyrightFooter(),
-        ],
+      body: SceneBackdrop(
+        scene: scene,
+        child: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 120),
+                child: FrostedSheet(child: PageFrame(child: body)),
+              ),
+            ),
+            const CopyrightFooter(onArt: true),
+          ],
+        ),
       ),
     );
   }
@@ -77,8 +96,20 @@ class AvatarBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipOval(
-      child: CustomPaint(size: Size.square(size), painter: AvatarPainter(id)),
+    final asset = avatarAsset(id);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: const Color(0xFFFFE7A3), width: 2),
+        boxShadow: const [BoxShadow(color: Color(0x660F766E), blurRadius: 8, offset: Offset(0, 3))],
+      ),
+      child: ClipOval(
+        child: asset == null
+            ? CustomPaint(size: Size.square(size), painter: AvatarPainter(id))
+            : Image.asset(asset, fit: BoxFit.cover),
+      ),
     );
   }
 }
@@ -114,18 +145,52 @@ class SoftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = Card(
+    final card = Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBF5),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE7C98A), width: 1.6),
+        boxShadow: const [
+          BoxShadow(color: Color(0x33064E3B), offset: Offset(0, 5), blurRadius: 0),
+        ],
+      ),
       child: Padding(
         padding: padding ?? const EdgeInsets.all(16),
-        child: child,
+        child: DefaultTextStyle.merge(
+          style: const TextStyle(color: Color(0xFF1C1917), fontFamily: 'Nunito'),
+          child: IconTheme.merge(
+            data: const IconThemeData(color: Color(0xFF134E4A)),
+            child: child,
+          ),
+        ),
       ),
     );
     if (onTap == null) return card;
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: card,
+    return _Pressable(onTap: onTap!, child: card);
+  }
+}
+
+class _Pressable extends StatefulWidget {
+  const _Pressable({required this.onTap, required this.child});
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_Pressable> createState() => _PressableState();
+}
+
+class _PressableState extends State<_Pressable> {
+  double _scale = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _scale = 0.98),
+      onTapUp: (_) => setState(() => _scale = 1),
+      onTapCancel: () => setState(() => _scale = 1),
+      onTap: widget.onTap,
+      child: AnimatedScale(scale: _scale, duration: const Duration(milliseconds: 90), child: widget.child),
     );
   }
 }
@@ -136,33 +201,71 @@ class Hud extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final scheme = Theme.of(context).colorScheme;
+    final progress = state.xpNeed == 0 ? 0.0 : state.xpInto / state.xpNeed;
+    const cream = Color(0xFFFFF6EA);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
       child: Row(
         children: [
-          AvatarBadge(id: state.data.profile.avatarId),
-          const SizedBox(width: 10),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AvatarBadge(id: state.data.profile.avatarId, size: 52),
+              Positioned(
+                right: -4,
+                bottom: -4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6A317),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(color: cream, width: 1.4),
+                    boxShadow: const [BoxShadow(color: Color(0xAAE6A317), blurRadius: 8)],
+                  ),
+                  child: Text(
+                    '${state.level}',
+                    style: const TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF1C1917)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${state.data.profile.name} · Lv ${state.level}',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  state.data.profile.name,
+                  style: const TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, color: cream, fontSize: 16, shadows: [Shadow(color: Color(0xAA000000), blurRadius: 6)]),
                 ),
                 const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(
-                    minHeight: 8,
-                    value: state.xpNeed == 0 ? 0 : state.xpInto / state.xpNeed,
-                    backgroundColor: scheme.surfaceContainerHighest,
+                Container(
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0x66121C22),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(color: const Color(0xFFFFE7A3)),
+                    boxShadow: const [BoxShadow(color: Color(0xAA1FA7A0), blurRadius: 8)],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: progress.clamp(0, 1),
+                        child: const DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [Color(0xFF5EEAD4), Color(0xFFE6A317)]),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 Text(
                   '${state.title} · ${state.xpInto}/${state.xpNeed} XP',
-                  style: Theme.of(context).textTheme.labelSmall,
+                  style: const TextStyle(color: cream, fontSize: 12, fontWeight: FontWeight.w700, shadows: [Shadow(color: Color(0xAA000000), blurRadius: 4)]),
                 ),
               ],
             ),
@@ -171,13 +274,14 @@ class Hud extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${state.data.profile.clarity} Clarity',
-                style: const TextStyle(fontWeight: FontWeight.w800),
+              CountingText(
+                value: state.data.profile.clarity,
+                suffix: ' Clarity',
+                style: const TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, color: Color(0xFFFFE7A3), shadows: [Shadow(color: Color(0xAA000000), blurRadius: 6)]),
               ),
               Text(
                 'Streak ${state.accountStreak}',
-                style: Theme.of(context).textTheme.labelSmall,
+                style: const TextStyle(color: cream, fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -209,9 +313,15 @@ class PicturePiece extends StatelessWidget {
   Widget build(BuildContext context) {
     final col = index % cols;
     final row = index ~/ cols;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Stack(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: glow, width: 2),
+        boxShadow: [BoxShadow(color: glow.withValues(alpha: 0.55), blurRadius: 8)],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Stack(
         fit: StackFit.expand,
         children: [
           FittedBox(
@@ -243,6 +353,7 @@ class PicturePiece extends StatelessWidget {
               child: Icon(Icons.help_outline, color: glow.withValues(alpha: 0.9)),
             ),
         ],
+        ),
       ),
     );
   }
@@ -271,6 +382,7 @@ class BoosterBar extends StatelessWidget {
 }
 
 Future<void> showLevelUp(BuildContext context, Reward reward) {
+  ConfettiBurst.show(context);
   return showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
@@ -284,25 +396,22 @@ Future<void> showLevelUp(BuildContext context, Reward reward) {
 }
 
 Future<void> showDrop(BuildContext context, Reward reward) {
+  ConfettiBurst.show(context);
   final drop = reward.drop;
-  final color = rarityColor(rarityName(drop.rarity));
+  final name = rarityName(drop.rarity);
+  final color = rarityColor(name);
   return showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text(drop.duplicate ? 'Duplicate piece' : '${rarityName(drop.rarity)} piece'),
+      title: Text(drop.duplicate ? 'Duplicate piece' : '$name piece'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            width: 160,
-            height: 160,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(color: color.withValues(alpha: 0.85), blurRadius: 24),
-                ],
-              ),
+            width: 180,
+            height: 180,
+            child: RarityFrame(
+              name: name,
               child: PicturePiece(
                 asset: drop.picture.asset,
                 cols: drop.picture.cols,
@@ -336,6 +445,7 @@ Future<void> showDrop(BuildContext context, Reward reward) {
 
 Future<void> showRewardFlow(BuildContext context, Reward reward) async {
   if (!context.mounted) return;
+  ConfettiBurst.show(context);
   await showDialog<void>(
     context: context,
     builder: (context) => AlertDialog(

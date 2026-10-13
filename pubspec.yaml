@@ -62,10 +62,16 @@ flutter:
   uses-material-design: true
   assets:
     - assets/pictures/
+    - assets/art/
   fonts:
     - family: Nunito
       fonts:
         - asset: assets/fonts/Nunito-Regular.ttf
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel-Regular.ttf
+        - asset: assets/fonts/Cinzel-Bold.ttf
+          weight: 700
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -60,44 +60,122 @@ ThemePreset presetFor(String id) {
   return themePresets.first;
 }
 
+class _RiseFade extends PageTransitionsBuilder {
+  const _RiseFade();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(curved),
+        child: child,
+      ),
+    );
+  }
+}
+
 ThemeData buildClarityTheme(String id) {
   final preset = presetFor(id);
   final scheme = ColorScheme.fromSeed(
     seedColor: preset.seed,
     brightness: preset.dark ? Brightness.dark : Brightness.light,
+    primary: preset.dark ? preset.seed : const Color(0xFF0F766E),
   );
+  const display = TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, height: 1.15);
+  final ink = preset.dark ? preset.ink : const Color(0xFF1C1917);
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
     fontFamily: 'Nunito',
-    scaffoldBackgroundColor: preset.foam,
+    scaffoldBackgroundColor: Colors.transparent,
+    splashFactory: InkSparkle.splashFactory,
+    textTheme: TextTheme(
+      displayMedium: display.copyWith(fontSize: 56, color: ink),
+      displaySmall: display.copyWith(fontSize: 36, color: ink),
+      headlineMedium: display.copyWith(fontSize: 28, color: ink),
+      headlineSmall: display.copyWith(fontSize: 22, color: ink),
+      titleLarge: display.copyWith(fontSize: 20, color: ink),
+      titleMedium: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 16),
+      bodyMedium: TextStyle(fontFamily: 'Nunito', fontSize: 15, height: 1.35, color: ink),
+      bodySmall: TextStyle(fontFamily: 'Nunito', fontSize: 13, color: ink.withValues(alpha: 0.8)),
+      labelLarge: const TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, fontSize: 14),
+    ),
     appBarTheme: AppBarTheme(
-      backgroundColor: preset.foam,
-      foregroundColor: preset.ink,
+      backgroundColor: Colors.transparent,
+      foregroundColor: preset.dark ? preset.ink : const Color(0xFFFFF8EF),
       elevation: 0,
       centerTitle: false,
+      titleTextStyle: display.copyWith(fontSize: 22, color: preset.dark ? preset.ink : const Color(0xFFFFF8EF)),
     ),
     cardTheme: CardThemeData(
-      color: preset.dark ? const Color(0xFF2A2438) : Colors.white,
+      color: preset.dark ? const Color(0xF02A2438) : const Color(0xFFFFFBF5),
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: preset.dark ? const Color(0xFF16141F) : Colors.white,
-      indicatorColor: scheme.primaryContainer,
+      backgroundColor: const Color(0xF0162320),
+      indicatorColor: const Color(0xFF1FA7A0),
+      height: 68,
       labelTextStyle: WidgetStateProperty.all(
-        const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700, fontSize: 12),
+        const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFFFFF6EA)),
+      ),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          color: states.contains(WidgetState.selected) ? const Color(0xFFFFE7A3) : const Color(0xFFD7EDE8),
+        ),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        textStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w800),
+      style: ButtonStyle(
+        backgroundColor: const WidgetStatePropertyAll(Color(0xFF0F766E)),
+        foregroundColor: const WidgetStatePropertyAll(Color(0xFFFFF8EF)),
+        elevation: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.pressed) ? 1 : 8),
+        shadowColor: const WidgetStatePropertyAll(Color(0x66064E3B)),
+        padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 22, vertical: 16)),
+        shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
+        textStyle: const WidgetStatePropertyAll(
+          TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, fontSize: 16),
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF134E4A),
+        side: const BorderSide(color: Color(0xFF0F766E), width: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        textStyle: const TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      fillColor: Colors.white,
+      labelStyle: const TextStyle(color: Color(0xFF57534E), fontFamily: 'Nunito'),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFFE7D3B0))),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: const Color(0xFFFFF8EF),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      titleTextStyle: display.copyWith(fontSize: 22, color: ink),
+    ),
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: _RiseFade(),
+        TargetPlatform.iOS: _RiseFade(),
+        TargetPlatform.macOS: _RiseFade(),
+        TargetPlatform.linux: _RiseFade(),
+        TargetPlatform.windows: _RiseFade(),
+        TargetPlatform.fuchsia: _RiseFade(),
+      },
     ),
   );
 }
@@ -109,4 +187,31 @@ Color rarityColor(String name) => switch (name) {
   'Legendary' => const Color(0xFFE6A317),
   'Mythic' => const Color(0xFFFF4D8D),
   _ => const Color(0xFF8B95A7),
+};
+
+enum Scene { beach, tower, arcade, night }
+
+String sceneAsset(Scene scene) => switch (scene) {
+  Scene.beach => 'assets/art/bg_beach.jpg',
+  Scene.tower => 'assets/art/bg_tower.jpg',
+  Scene.arcade => 'assets/art/bg_arcade.jpg',
+  Scene.night => 'assets/art/bg_night.jpg',
+};
+
+String? avatarAsset(String id) => switch (id) {
+  'avatar_scout' => 'assets/art/avatar_scout.jpg',
+  'avatar_emberfox' => 'assets/art/avatar_emberfox.jpg',
+  'avatar_moonmoth' => 'assets/art/avatar_moonmoth.jpg',
+  'avatar_kelpknight' => 'assets/art/avatar_kelpknight.jpg',
+  'avatar_starwren' => 'assets/art/avatar_starwren.jpg',
+  _ => null,
+};
+
+String? shopArt(String id) => switch (id) {
+  'freeze' => 'assets/art/item_freeze.jpg',
+  'life' => 'assets/art/item_life.jpg',
+  'peek' || 'time' || 'hint' || 'shuffle' => 'assets/art/item_boosters.jpg',
+  'card_constellation' => 'assets/art/card_constellation.jpg',
+  'pouch_small' || 'chest_large' => 'assets/art/item_life.jpg',
+  _ => avatarAsset(id),
 };

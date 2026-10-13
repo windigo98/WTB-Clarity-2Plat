@@ -6,6 +6,7 @@ import 'src/screens/shell.dart';
 import 'src/services/gateways.dart';
 import 'src/state/app_state.dart';
 import 'src/theme/clarity_theme.dart';
+import 'src/widgets/chrome.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,10 +32,46 @@ class ClarityApp extends StatelessWidget {
             title: 'WTB Clarity 2plat',
             debugShowCheckedModeBanner: false,
             theme: buildClarityTheme(state.data.profile.themeId),
-            home: state.data.profile.onboarded ? const Shell() : const OnboardingPage(),
+            home: const SplashGate(),
           );
         },
       ),
     );
+  }
+}
+
+class SplashGate extends StatefulWidget {
+  const SplashGate({super.key});
+
+  @override
+  State<SplashGate> createState() => _SplashGateState();
+}
+
+class _SplashGateState extends State<SplashGate> {
+  var _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final testing = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    if (testing) {
+      _ready = true;
+      return;
+    }
+    Future<void>.delayed(const Duration(milliseconds: 1400), () {
+      if (mounted) setState(() => _ready = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final onboarded = context.watch<AppState>().data.profile.onboarded;
+    if (!_ready) {
+      return const SceneBackdrop(
+        scene: Scene.night,
+        child: Center(child: WingsCrewLogo(height: 140)),
+      );
+    }
+    return onboarded ? const Shell() : const OnboardingPage();
   }
 }

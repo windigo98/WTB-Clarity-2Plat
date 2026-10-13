@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../theme/clarity_theme.dart';
+import '../widgets/chrome.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
 import 'arcade.dart';
@@ -19,8 +21,6 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   int _index = 0;
 
-  static const _titles = ['Today', 'Routines', 'Focus', 'Arcade', 'Keep'];
-
   @override
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
@@ -31,25 +31,41 @@ class _ShellState extends State<Shell> {
       ArcadePage(),
       KeepPage(),
     ];
-    final body = Column(
+    final scene = switch (_index) {
+      0 => Scene.beach,
+      3 => Scene.arcade,
+      4 => Scene.tower,
+      _ => Scene.night,
+    };
+    final sheet = Column(
       children: [
         const Hud(),
-        Expanded(child: PageFrame(child: IndexedStack(index: _index, children: pages))),
-        const CopyrightFooter(),
+        const SizedBox(height: 88),
+        Expanded(child: FrostedSheet(child: PageFrame(child: IndexedStack(index: _index, children: pages)))),
+        const CopyrightFooter(onArt: true),
       ],
     );
+    final stage = SceneBackdrop(scene: scene, child: SafeArea(child: sheet));
     if (wide) {
       return Scaffold(
         body: Row(
           children: [
             NavigationRail(
+              backgroundColor: const Color(0xF0121C22),
               selectedIndex: _index,
               onDestinationSelected: (value) => setState(() => _index = value),
               labelType: NavigationRailLabelType.all,
               leading: const Padding(
-                padding: EdgeInsets.all(12),
-                child: Text('Clarity', style: TextStyle(fontWeight: FontWeight.w800)),
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  child: Image(image: AssetImage('assets/art/logo.jpg'), width: 56, height: 56, fit: BoxFit.cover),
+                ),
               ),
+              selectedIconTheme: const IconThemeData(color: Color(0xFFFFE7A3)),
+              unselectedIconTheme: const IconThemeData(color: Color(0xFFD7EDE8)),
+              selectedLabelTextStyle: const TextStyle(color: Color(0xFFFFE7A3), fontWeight: FontWeight.w800, fontSize: 12),
+              unselectedLabelTextStyle: const TextStyle(color: Color(0xFFD7EDE8), fontSize: 12),
               destinations: const [
                 NavigationRailDestination(icon: Icon(Icons.wb_sunny_outlined), selectedIcon: Icon(Icons.wb_sunny), label: Text('Today')),
                 NavigationRailDestination(icon: Icon(Icons.checklist), label: Text('Routines')),
@@ -58,38 +74,17 @@ class _ShellState extends State<Shell> {
                 NavigationRailDestination(icon: Icon(Icons.castle_outlined), selectedIcon: Icon(Icons.castle), label: Text('Keep')),
               ],
             ),
-            const VerticalDivider(width: 1),
-            Expanded(child: body),
+            Expanded(child: stage),
           ],
         ),
       );
     }
     return Scaffold(
-      body: SafeArea(child: body),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: [
-          for (var i = 0; i < _titles.length; i++)
-            NavigationDestination(
-              icon: Icon(_icon(i, false)),
-              selectedIcon: Icon(_icon(i, true)),
-              label: _titles[i],
-            ),
-        ],
-      ),
+      body: stage,
+      bottomNavigationBar: GameDock(index: _index, onSelect: (value) => setState(() => _index = value)),
     );
   }
 
-  IconData _icon(int index, bool selected) {
-    return switch (index) {
-      0 => selected ? Icons.wb_sunny : Icons.wb_sunny_outlined,
-      1 => Icons.checklist,
-      2 => selected ? Icons.timer : Icons.timer_outlined,
-      3 => selected ? Icons.sports_esports : Icons.sports_esports_outlined,
-      _ => selected ? Icons.castle : Icons.castle_outlined,
-    };
-  }
 }
 
 class OnboardingPage extends StatefulWidget {
@@ -117,7 +112,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
+      body: SceneBackdrop(
+        scene: Scene.beach,
+        child: SafeArea(
         child: Column(
           children: [
             Expanded(
@@ -194,9 +191,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 child: Text(_index < 2 ? 'Next' : 'Step onto the sand'),
               ),
             ),
-            const CopyrightFooter(),
+            const CopyrightFooter(onArt: true),
           ],
         ),
+      ),
       ),
     );
   }
@@ -215,10 +213,25 @@ class _Pitch extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+          if (title.startsWith('WTB')) const Center(child: WingsCrewLogo(height: 96)),
           const SizedBox(height: 12),
-          Text(body, style: Theme.of(context).textTheme.titleMedium),
-          if (extra != null) ...[const SizedBox(height: 20), extra!],
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: const Color(0xEEFFF8EF),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE7C98A), width: 2),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: 12),
+                Text(body, style: Theme.of(context).textTheme.titleMedium),
+                if (extra != null) ...[const SizedBox(height: 20), extra!],
+              ],
+            ),
+          ),
         ],
       ),
     );

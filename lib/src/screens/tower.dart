@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../logic/clarity_logic.dart';
 import '../state/app_state.dart';
+import '../theme/clarity_theme.dart';
 import '../widgets/common.dart';
 
 class TowerPage extends StatelessWidget {
@@ -17,6 +18,7 @@ class TowerPage extends StatelessWidget {
     final entries = state.data.tower.reversed.toList();
     return ClarityPage(
       title: 'Memory Tower',
+      scene: Scene.tower,
       floating: FloatingActionButton.extended(
         onPressed: () => _add(context),
         icon: const Icon(Icons.add_a_photo),

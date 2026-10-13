@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../logic/clarity_logic.dart';
 import '../state/app_state.dart';
+import '../theme/clarity_theme.dart';
 import '../widgets/common.dart';
 import 'games.dart';
 
@@ -93,6 +94,7 @@ class LevelMapPage extends StatelessWidget {
     final count = levelCount(gameId);
     return ClarityPage(
       title: gameName(gameId),
+      scene: Scene.arcade,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

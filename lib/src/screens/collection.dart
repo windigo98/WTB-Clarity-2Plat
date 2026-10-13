@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../logic/clarity_logic.dart';
 import '../state/app_state.dart';
 import '../theme/clarity_theme.dart';
+import '../widgets/chrome.dart';
 import '../widgets/common.dart';
 
 class CollectionPage extends StatelessWidget {
@@ -45,14 +46,14 @@ class _Album extends StatelessWidget {
               Expanded(
                 child: Text(picture.title, style: const TextStyle(fontWeight: FontWeight.w800)),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(99),
-                  boxShadow: [BoxShadow(color: color.withValues(alpha: 0.45), blurRadius: 8)],
+              RarityFrame(
+                name: rarityName(picture.rarity),
+                radius: 99,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  color: const Color(0xFFFFFBF5),
+                  child: Text(rarityName(picture.rarity), style: TextStyle(color: color, fontWeight: FontWeight.w800)),
                 ),
-                child: Text(rarityName(picture.rarity), style: TextStyle(color: color, fontWeight: FontWeight.w800)),
               ),
             ],
           ),

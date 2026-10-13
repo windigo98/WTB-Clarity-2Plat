@@ -9,6 +9,7 @@ import '../painters/painters.dart';
 import '../services/composite.dart';
 import '../services/download.dart';
 import '../state/app_state.dart';
+import '../theme/clarity_theme.dart';
 import '../widgets/common.dart';
 
 class CastlePage extends StatefulWidget {
@@ -45,6 +46,7 @@ class _CastlePageState extends State<CastlePage> with TickerProviderStateMixin {
     final nextCost = done ? 0 : SandcastlePlan.cost(pieces);
     return ClarityPage(
       title: 'Sandcastle',
+      scene: Scene.beach,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

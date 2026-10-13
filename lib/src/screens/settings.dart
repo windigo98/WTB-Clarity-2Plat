@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../services/download.dart';
 import '../state/app_state.dart';
+import '../widgets/chrome.dart';
 import '../widgets/common.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -41,6 +42,8 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const Center(child: WingsCrewLogo(height: 92)),
+          const SizedBox(height: 12),
           TextField(
             controller: _name,
             decoration: const InputDecoration(labelText: 'Traveler name'),

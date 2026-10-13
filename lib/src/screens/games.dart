@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../logic/clarity_logic.dart';
 import '../painters/painters.dart';
 import '../state/app_state.dart';
+import '../theme/clarity_theme.dart';
 import '../widgets/common.dart';
 
 Future<void> openGame(BuildContext context, String gameId, int level) async {
@@ -86,6 +87,7 @@ class _PlayScreenState extends State<PlayScreen> {
     };
     return ClarityPage(
       title: '${gameName(widget.gameId)} · ${widget.level}',
+      scene: Scene.arcade,
       body: DecoratedBox(
         decoration: BoxDecoration(color: tint),
         child: switch (kind) {

@@ -63,9 +63,19 @@ class SandcastlePainter extends CustomPainter {
       );
     }
     if (pieces >= 1) {
+      final mound = Rect.fromCenter(center: Offset(w * 0.5, ground), width: w * 0.62, height: h * 0.16);
       canvas.drawOval(
-        Rect.fromCenter(center: Offset(w * 0.5, ground), width: w * 0.62, height: h * 0.16),
-        Paint()..color = const Color(0xFFE7B87A),
+        mound,
+        Paint()
+          ..shader = ui.Gradient.linear(
+            mound.topCenter,
+            mound.bottomCenter,
+            const [Color(0xFFFFE1B0), Color(0xFFD0893E)],
+          ),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(w * 0.42, ground - h * 0.02), width: w * 0.22, height: h * 0.04),
+        Paint()..color = const Color(0x66FFFFFF),
       );
     }
     if (pieces >= 4) {

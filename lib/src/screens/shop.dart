@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../logic/clarity_logic.dart';
 import '../state/app_state.dart';
+import '../theme/clarity_theme.dart';
 import '../widgets/common.dart';
 
 class ShopPage extends StatelessWidget {
@@ -65,11 +66,43 @@ class _Tile extends StatelessWidget {
       _ => false,
     };
     final count = item.category == 'booster' ? state.boosterCount(item.id) : null;
+    final art = shopArt(item.id);
     return SoftCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(item.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+          Row(
+            children: [
+              if (art != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(art, width: 64, height: 64, fit: BoxFit.cover),
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          const Color(0xFFE6A317),
+                        ],
+                      ),
+                    ),
+                    child: const Icon(Icons.auto_awesome, color: Colors.white),
+                  ),
+                ),
+              Expanded(child: Text(item.name, style: const TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, fontSize: 18))),
+            ],
+          ),
+          const SizedBox(height: 6),
           Text(item.blurb),
           const SizedBox(height: 8),
           Row(

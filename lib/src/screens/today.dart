@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../logic/clarity_logic.dart';
 import '../models/app_data.dart';
 import '../state/app_state.dart';
+import '../widgets/chrome.dart';
 import '../widgets/common.dart';
 import 'games.dart';
 import 'habits.dart';
@@ -53,7 +54,17 @@ class TodayPage extends StatelessWidget {
             SoftCard(
               child: Row(
                 children: [
-                  Text(habit.glyph, style: const TextStyle(fontSize: 28)),
+                  Container(
+                    width: 46,
+                    height: 46,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: [Color(0xFF5EEAD4), Color(0xFF0F766E)]),
+                      boxShadow: [BoxShadow(color: Color(0x66064E3B), offset: Offset(0, 3), blurRadius: 0)],
+                    ),
+                    child: Text(habit.glyph, style: const TextStyle(fontSize: 22)),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -79,6 +90,7 @@ class TodayPage extends StatelessWidget {
                         ? null
                         : () {
                             final beforeXp = state.data.profile.xp;
+                            ConfettiBurst.show(context);
                             final message = state.checkIn(habit.id);
                             final gained = state.data.profile.xp - beforeXp;
                             if (message != null && message.startsWith('level:')) {
