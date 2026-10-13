@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
+import '../widgets/board.dart';
 import '../widgets/common.dart';
 import 'games.dart';
 
@@ -92,19 +93,26 @@ class _FocusPageState extends State<FocusPage> {
     final shown = _running || _remaining > 0 ? _remaining : work * 60;
     final minutes = (shown ~/ 60).toString().padLeft(2, '0');
     final seconds = (shown % 60).toString().padLeft(2, '0');
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Focus timer', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+    final total = (_break ? rest : work) * 60;
+    final progress = total == 0 ? 0.0 : (shown / total).clamp(0.0, 1.0);
+    return FillPage(
+      top: [
+        const SectionLabel('Focus timer'),
         const Text('A timed work bout, then a short break. Finished bouts earn XP.'),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Center(
-          child: Text(
-            '$minutes:$seconds',
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(fontWeight: FontWeight.w800),
+          child: ProgressRing(
+            progress: progress,
+            label: '$minutes:$seconds',
+            caption: _break ? 'break' : 'work',
+            size: 210,
+            labelSize: 36,
+            color: const Color(0xFF0F766E),
+            track: const Color(0x330F766E),
+            labelColor: const Color(0xFF134E4A),
+            captionColor: const Color(0xFF57534E),
           ),
         ),
-        Text(_break ? 'Break' : 'Work bout', textAlign: TextAlign.center),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -179,10 +187,11 @@ class _FocusPageState extends State<FocusPage> {
           icon: const Icon(Icons.air),
           label: const Text('Tide breath before you start'),
         ),
-        const SizedBox(height: 16),
-        Text('Recent bouts', style: Theme.of(context).textTheme.titleMedium),
+      ],
+      bottom: [
+        const SectionLabel('Recent bouts'),
         if (state.data.sessions.isEmpty)
-          const SoftCard(child: Text('No finished bouts yet.'))
+          const SoftCard(child: Text('No finished bouts yet. A cleared bout lands here with its XP.'))
         else
           for (final session in state.data.sessions.take(8))
             SoftCard(child: Text('${session.minutes} min · +${session.xp} XP')),

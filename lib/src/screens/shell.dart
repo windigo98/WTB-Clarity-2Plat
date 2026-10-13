@@ -40,7 +40,7 @@ class _ShellState extends State<Shell> {
     final sheet = Column(
       children: [
         const Hud(),
-        const SizedBox(height: 88),
+        const SizedBox(height: 28),
         Expanded(child: FrostedSheet(child: PageFrame(child: IndexedStack(index: _index, children: pages)))),
         const CopyrightFooter(onArt: true),
       ],

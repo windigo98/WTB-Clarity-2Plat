@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../logic/clarity_logic.dart';
 import '../state/app_state.dart';
 import '../theme/clarity_theme.dart';
+import '../widgets/board.dart';
 import '../widgets/common.dart';
 import 'games.dart';
 
@@ -40,18 +41,79 @@ class _ArcadePageState extends State<ArcadePage> {
     final state = context.watch<AppState>();
     final lives = state.data.profile.lives;
     final wait = lives >= LifeClock.maxLives ? 'Lives full' : 'Next life ${formatClock(state.msUntilNextLife)}';
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Arcade', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-        Text('Lives $lives/${LifeClock.maxLives} · $wait'),
-        const Text('Wins earn XP and a picture piece. Boosters and extra lives are in the shop.'),
+    final featured = featuredArcadeId(state.now);
+    final level = nextOpenLevel(
+      count: levelCount(featured),
+      unlocked: (value) => state.levelUnlocked(featured, value),
+      stars: (value) => state.starsFor(featured, value),
+    );
+    final width = MediaQuery.sizeOf(context).width;
+    final games = [...arcadeGameIds, 'tidebreath'];
+    return FillPage(
+      top: [
+        BannerCard(
+          child: Row(
+            children: [
+              ProgressRing(
+                progress: lives / LifeClock.maxLives,
+                label: '$lives',
+                caption: 'lives',
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Arcade', style: TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, fontSize: 22)),
+                    Text('$lives/${LifeClock.maxLives} · $wait'),
+                    const Text('Wins earn XP and a picture piece.'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
         SoftCard(
           onTap: () => openGame(context, 'daily', state.featuredDaily),
-          child: Text('Daily riddle · ${gameName(dailyKind(state.now))} · level ${state.featuredDaily}'),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Daily riddle', style: TextStyle(fontWeight: FontWeight.w800)),
+                    Text('${gameName(dailyKind(state.now))} · level ${state.featuredDaily}. It counts toward your streak.'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        for (final id in arcadeGameIds) _GameLink(id: id),
-        _GameLink(id: 'tidebreath'),
+        SoftCard(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => LevelMapPage(gameId: featured))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Featured · ${gameName(featured)}', style: const TextStyle(fontWeight: FontWeight.w800)),
+              Text(gameBlurb(featured)),
+              Text('Open level $level'),
+            ],
+          ),
+        ),
+      ],
+      bottom: [
+        const SectionLabel('Every game'),
+        if (width >= 720)
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final id in games) SizedBox(width: 280, child: _GameLink(id: id)),
+            ],
+          )
+        else
+          for (final id in games) _GameLink(id: id),
       ],
     );
   }

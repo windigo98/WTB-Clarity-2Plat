@@ -28,10 +28,16 @@ Open `http://127.0.0.1:47221`.
 Production web build:
 
 ```bash
-flutter build web
+flutter build web --release
 ```
 
-The output is in `build/web`. The same project includes `android/` and `ios/` so a later store build can start from this codebase. Camera and photo-library usage strings are already in the mobile manifests. This phase is verified on the web.
+Preview hosted under `/wtb-clarity-preview/` (for example wingscrew.com/wtb-clarity-preview/):
+
+```bash
+flutter build web --release --base-href /wtb-clarity-preview/
+```
+
+The output is in `build/web`. `web/index.html` includes `<meta name="robots" content="noindex, nofollow">`. The same project includes `android/` and `ios/` so a later store build can start from this codebase. Camera and photo-library usage strings are already in the mobile manifests. This phase is verified on the web.
 
 ## Tests
 

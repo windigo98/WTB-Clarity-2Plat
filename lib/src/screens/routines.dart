@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/app_data.dart';
 import '../state/app_state.dart';
+import '../widgets/board.dart';
 import '../widgets/common.dart';
 
 class RoutinesPage extends StatelessWidget {
@@ -39,12 +40,39 @@ class _RoutineList extends StatelessWidget {
     final state = context.watch<AppState>();
     final routine = state.data.routines.where((r) => r.slot == slot).firstOrNull;
     final steps = routine?.steps ?? const <RoutineStep>[];
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          slot == 'morning' ? 'Set the shape of the morning.' : 'Close the day in order.',
+    return FillPage(
+      top: [
+        BannerCard(
+          child: Row(
+            children: [
+              ProgressRing(
+                progress: steps.isEmpty ? 0 : 1,
+                label: '${steps.length}',
+                caption: 'steps',
+                color: const Color(0xFFFFE7A3),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      slot == 'morning' ? 'Morning run' : 'Evening run',
+                      style: const TextStyle(fontFamily: 'Cinzel', fontWeight: FontWeight.w700, fontSize: 20),
+                    ),
+                    Text(
+                      steps.isEmpty
+                          ? 'Add water, a stretch, or one quiet minute.'
+                          : 'Up next: ${steps.first.label}',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(height: 8),
+        Text(slot == 'morning' ? 'Set the shape of the morning.' : 'Close the day in order.'),
         if (steps.isEmpty)
           const SoftCard(child: Text('No steps yet. Add a habit or a custom line.')),
         for (var i = 0; i < steps.length; i++)
@@ -69,7 +97,8 @@ class _RoutineList extends StatelessWidget {
               ],
             ),
           ),
-        const SizedBox(height: 8),
+      ],
+      bottom: [
         OutlinedButton.icon(
           onPressed: () => _add(context, slot),
           icon: const Icon(Icons.add),

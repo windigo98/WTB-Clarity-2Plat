@@ -18,6 +18,7 @@ void main() {
 
     await tester.pumpWidget(ClarityApp(state: state));
     expect(find.text('Drink water'), findsOneWidget);
+    await tester.scrollUntilVisible(find.byKey(Key('check-${state.data.habits.single.id}')), 200);
     await tester.tap(find.byKey(Key('check-${state.data.habits.single.id}')));
     await tester.pump();
     expect(state.data.habits.single.checkIns, isNotEmpty);
