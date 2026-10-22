@@ -49,6 +49,21 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Square icons are generated from assets/brand/logo.png (the WingsCrew feather).
+# Maskable web icons keep the feather inside the adaptive-icon safe zone on
+# cream #F6EFE3. The Android adaptive foreground uses that same padding, so the
+# inset stays at 0 and the feather is not clipped by a circular mask.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/app_icon.png
+  adaptive_icon_background: "#F6EFE3"
+  adaptive_icon_foreground: assets/icon/app_icon_foreground.png
+  adaptive_icon_foreground_inset: 0
+  remove_alpha_ios: true
+  background_color_ios: "#F6EFE3"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
