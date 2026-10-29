@@ -6,6 +6,7 @@ import '../models/app_data.dart';
 import '../painters/painters.dart';
 import '../state/app_state.dart';
 import '../theme/clarity_theme.dart';
+import 'brand.dart';
 import 'chrome.dart';
 
 class CopyrightFooter extends StatelessWidget {
@@ -17,7 +18,7 @@ class CopyrightFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
-      child: Text(
+      child: WingsCrewText(
         '© 2026 WingsCrew. All rights reserved.',
         textAlign: TextAlign.center,
         style: TextStyle(
