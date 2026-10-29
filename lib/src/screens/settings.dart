@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../services/download.dart';
 import '../state/app_state.dart';
+import '../widgets/brand.dart';
 import '../widgets/chrome.dart';
 import '../widgets/common.dart';
 
@@ -79,11 +80,11 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 24),
           Text('About', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 8),
-          const Text(
+          const WingsCrewText(
             'WTB Clarity 2plat is a habit and routine game from WingsCrew. The name is a nod to old MMO trade chat ("want to buy Clarity for 2 platinum"). The gamer flavor is our own.',
           ),
           const SizedBox(height: 8),
-          const Text(
+          const WingsCrewText(
             'WTB Clarity 2plat is an independent WingsCrew app and is not affiliated with or endorsed by EverQuest or Daybreak Game Company.',
           ),
           const SizedBox(height: 8),
@@ -92,6 +93,8 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 8),
           const Text('Sign-in arrives with crews in a later phase. Progress stays on this device for now.'),
+          const SizedBox(height: 16),
+          const MoreFromWingsCrewButton(),
           const SizedBox(height: 16),
           const CopyrightFooter(),
         ],

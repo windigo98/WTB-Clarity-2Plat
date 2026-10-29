@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../theme/clarity_theme.dart';
+import 'brand.dart';
 
 class SceneBackdrop extends StatefulWidget {
   const SceneBackdrop({super.key, required this.scene, required this.child});
@@ -119,7 +120,9 @@ class WingsCrewLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset('assets/art/logo.jpg', height: height, fit: BoxFit.contain);
+    return WingsCrewHomeLink(
+      child: Image.asset('assets/art/logo.jpg', height: height, fit: BoxFit.contain),
+    );
   }
 }
 

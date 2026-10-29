@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../theme/clarity_theme.dart';
+import '../widgets/brand.dart';
 import '../widgets/chrome.dart';
 import '../state/app_state.dart';
 import '../widgets/common.dart';
@@ -39,6 +40,7 @@ class _ShellState extends State<Shell> {
     };
     final sheet = Column(
       children: [
+        const ByWingsCrewCredit(),
         const Hud(),
         const SizedBox(height: 28),
         Expanded(child: FrostedSheet(child: PageFrame(child: IndexedStack(index: _index, children: pages)))),
@@ -57,9 +59,11 @@ class _ShellState extends State<Shell> {
               labelType: NavigationRailLabelType.all,
               leading: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  child: Image(image: AssetImage('assets/art/logo.jpg'), width: 56, height: 56, fit: BoxFit.cover),
+                child: WingsCrewHomeLink(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    child: Image(image: AssetImage('assets/art/logo.jpg'), width: 56, height: 56, fit: BoxFit.cover),
+                  ),
                 ),
               ),
               selectedIconTheme: const IconThemeData(color: Color(0xFFFFE7A3)),
@@ -227,7 +231,7 @@ class _Pitch extends StatelessWidget {
               children: [
                 Text(title, style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 12),
-                Text(body, style: Theme.of(context).textTheme.titleMedium),
+                WingsCrewText(body, style: Theme.of(context).textTheme.titleMedium),
                 if (extra != null) ...[const SizedBox(height: 20), extra!],
               ],
             ),
