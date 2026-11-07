@@ -26,7 +26,8 @@ void main() {
       reason: 'a color must not turn on while the route is still opening',
     );
 
-    await _pumpUntilSettled(tester, route);
+    final transition = route.transitionDuration;
+    await tester.pump(transition);
     expect(_litBeacon(tester), isNull, reason: 'the settled screen starts neutral');
 
     await tester.pump(const Duration(milliseconds: 699));
@@ -47,8 +48,7 @@ void main() {
     await _openBeacon(tester);
     await tester.pump();
     final route = ModalRoute.of(tester.element(find.byType(BeaconBoard)))!;
-    await _pumpUntilSettled(tester, route);
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump(route.transitionDuration + const Duration(milliseconds: 200));
     expect(_litBeacon(tester), isNull);
 
     Navigator.of(tester.element(find.byType(BeaconBoard))).pop();
@@ -61,8 +61,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     final again = ModalRoute.of(tester.element(find.byType(BeaconBoard)))!;
-    await _pumpUntilSettled(tester, again);
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(again.transitionDuration + const Duration(milliseconds: 400));
     expect(_litBeacon(tester), isNull);
     expect(tester.takeException(), isNull);
     await _drain(tester);
@@ -72,16 +71,6 @@ void main() {
 Future<void> _drain(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.pump(const Duration(seconds: 5));
-}
-
-Future<void> _pumpUntilSettled(WidgetTester tester, ModalRoute<dynamic> route) async {
-  var steps = 0;
-  while (route.animation!.status != AnimationStatus.completed) {
-    expect(_litBeacon(tester), isNull);
-    await tester.pump(const Duration(milliseconds: 50));
-    steps += 1;
-    expect(steps, lessThan(40), reason: 'route transition did not finish');
-  }
 }
 
 Future<void> _openBeacon(WidgetTester tester) async {
