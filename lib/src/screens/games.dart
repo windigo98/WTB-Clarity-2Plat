@@ -360,6 +360,7 @@ class _BeaconBoardState extends State<BeaconBoard> {
   int _boosters = 0;
   bool _ended = false;
 
+  static const _neutralPause = Duration(milliseconds: 700);
   static const _colors = [
     Color(0xFFE85D4C),
     Color(0xFF0F766E),
@@ -371,7 +372,38 @@ class _BeaconBoardState extends State<BeaconBoard> {
   void initState() {
     super.initState();
     _sequence = makeSequence(widget.length, widget.seed);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _play());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _enter());
+  }
+
+  @override
+  void dispose() {
+    _gen++;
+    super.dispose();
+  }
+
+  /// The opening route builds this board on its first frame, before the
+  /// transition has finished. Hold every beacon off for that transition and
+  /// a short neutral pause so the first flash is seen from the start.
+  Future<void> _enter() async {
+    final gen = ++_gen;
+    final route = ModalRoute.of(context);
+    final animation = route?.animation;
+    var wait = _neutralPause;
+    if (animation != null && animation.status == AnimationStatus.dismissed) return;
+    if (route != null && animation != null) {
+      // The opening frame can report the transition as finished while the
+      // page is still sliding in. Always budget the route duration unless it
+      // is missing, and ignore a bogus sub-frame duration.
+      final transition = route.transitionDuration;
+      wait += transition < const Duration(milliseconds: 300)
+          ? const Duration(milliseconds: 450)
+          : transition;
+    }
+    await Future<void>.delayed(wait);
+    if (!mounted || gen != _gen) return;
+    final status = ModalRoute.of(context)?.animation?.status;
+    if (status == AnimationStatus.reverse || status == AnimationStatus.dismissed) return;
+    await _play();
   }
 
   Future<void> _play() async {
