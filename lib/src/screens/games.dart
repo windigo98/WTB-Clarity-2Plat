@@ -390,8 +390,14 @@ class _BeaconBoardState extends State<BeaconBoard> {
     final animation = route?.animation;
     var wait = _neutralPause;
     if (animation != null && animation.status == AnimationStatus.dismissed) return;
-    if (animation != null && animation.status != AnimationStatus.completed) {
-      wait += route!.transitionDuration;
+    if (route != null && animation != null) {
+      // The opening frame can report the transition as finished while the
+      // page is still sliding in. Always budget the route duration unless it
+      // is missing, and ignore a bogus sub-frame duration.
+      final transition = route.transitionDuration;
+      wait += transition < const Duration(milliseconds: 300)
+          ? const Duration(milliseconds: 450)
+          : transition;
     }
     await Future<void>.delayed(wait);
     if (!mounted || gen != _gen) return;
