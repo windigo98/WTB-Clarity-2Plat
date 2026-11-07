@@ -359,7 +359,11 @@ class _BeaconBoardState extends State<BeaconBoard> {
   bool _input = false;
   int _boosters = 0;
   bool _ended = false;
+  Animation<double>? _entranceAnimation;
+  AnimationStatusListener? _entranceListener;
+  Completer<bool>? _entranceSettled;
 
+  static const _neutralPause = Duration(milliseconds: 700);
   static const _colors = [
     Color(0xFFE85D4C),
     Color(0xFF0F766E),
@@ -371,7 +375,66 @@ class _BeaconBoardState extends State<BeaconBoard> {
   void initState() {
     super.initState();
     _sequence = makeSequence(widget.length, widget.seed);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _play());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _enter());
+  }
+
+  @override
+  void dispose() {
+    _detachEntranceListener();
+    final settled = _entranceSettled;
+    if (settled != null && !settled.isCompleted) settled.complete(false);
+    _gen++;
+    super.dispose();
+  }
+
+  void _detachEntranceListener() {
+    final animation = _entranceAnimation;
+    final listener = _entranceListener;
+    if (animation != null && listener != null) {
+      animation.removeStatusListener(listener);
+    }
+    _entranceAnimation = null;
+    _entranceListener = null;
+  }
+
+  /// The opening route builds this board on its first frame, before the
+  /// transition has finished. Wait until that animation settles, then hold
+  /// every beacon off so the first flash is seen from the start.
+  Future<void> _enter() async {
+    final gen = ++_gen;
+    final settled = await _waitForRoute();
+    if (!mounted || gen != _gen || !settled) return;
+    await Future<void>.delayed(_neutralPause);
+    if (!mounted || gen != _gen) return;
+    final status = ModalRoute.of(context)?.animation?.status;
+    if (status != null && status != AnimationStatus.completed) return;
+    await _play();
+  }
+
+  Future<bool> _waitForRoute() {
+    final animation = ModalRoute.of(context)?.animation;
+    if (animation == null || animation.status == AnimationStatus.completed) {
+      return Future<bool>.value(true);
+    }
+    if (animation.status == AnimationStatus.dismissed) {
+      return Future<bool>.value(false);
+    }
+    final settled = Completer<bool>();
+    _entranceSettled = settled;
+    void onStatus(AnimationStatus status) {
+      if (status != AnimationStatus.completed && status != AnimationStatus.dismissed) return;
+      _detachEntranceListener();
+      if (!settled.isCompleted) settled.complete(status == AnimationStatus.completed);
+    }
+
+    _entranceAnimation = animation;
+    _entranceListener = onStatus;
+    animation.addStatusListener(onStatus);
+    if (animation.status == AnimationStatus.completed || animation.status == AnimationStatus.dismissed) {
+      _detachEntranceListener();
+      if (!settled.isCompleted) settled.complete(animation.status == AnimationStatus.completed);
+    }
+    return settled.future;
   }
 
   Future<void> _play() async {
