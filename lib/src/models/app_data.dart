@@ -1,5 +1,11 @@
 import '../logic/clarity_logic.dart';
 
+int? _weekday(Object? value) {
+  final day = value is int ? value : value is num ? value.toInt() : null;
+  if (day == null || day < DateTime.monday || day > DateTime.sunday) return null;
+  return day;
+}
+
 int _int(Object? v, [int d = 0]) =>
     v is int ? v : v is num ? v.toInt() : d;
 
@@ -246,6 +252,8 @@ class Profile {
     required this.remindHabits,
     required this.reminderTime,
     required this.createdMs,
+    this.restWeekday,
+    this.dayStartHour = 0,
   });
 
   String name;
@@ -268,6 +276,8 @@ class Profile {
   bool remindHabits;
   String reminderTime;
   int createdMs;
+  int? restWeekday;
+  int dayStartHour;
 
   factory Profile.fresh(int nowMs) => Profile(
     name: 'Traveler',
@@ -290,6 +300,8 @@ class Profile {
     remindHabits: false,
     reminderTime: '08:00',
     createdMs: nowMs,
+    restWeekday: null,
+    dayStartHour: 0,
   );
 
   Map<String, Object?> toJson() => {
@@ -313,6 +325,8 @@ class Profile {
     'remindHabits': remindHabits,
     'reminderTime': reminderTime,
     'createdMs': createdMs,
+    'restWeekday': restWeekday,
+    'dayStartHour': dayStartHour,
   };
 
   factory Profile.fromJson(Map<String, dynamic> json, int nowMs) => Profile(
@@ -336,6 +350,8 @@ class Profile {
     remindHabits: _bool(json['remindHabits']),
     reminderTime: _str(json['reminderTime'], '08:00'),
     createdMs: _int(json['createdMs'], nowMs),
+    restWeekday: _weekday(json['restWeekday']),
+    dayStartHour: _int(json['dayStartHour']).clamp(0, 23),
   );
 }
 

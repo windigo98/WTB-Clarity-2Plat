@@ -159,6 +159,14 @@ DropOutcome rollDrop({
 class Day {
   static DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
+  /// Calendar day for [instant] when the day rolls over at [dayStartHour].
+  /// Hour 0 is midnight, so existing days stay put. Hour 4 means 3:30 AM
+  /// still belongs to the previous day.
+  static DateTime logical(DateTime instant, int dayStartHour) {
+    final hour = dayStartHour.clamp(0, 23);
+    return dateOnly(instant.subtract(Duration(hours: hour)));
+  }
+
   static String key(DateTime d) {
     final day = dateOnly(d);
     final m = day.month.toString().padLeft(2, '0');
@@ -236,20 +244,28 @@ bool habitDue(List<int> weekdays, DateTime day) {
   return weekdays.contains(day.weekday);
 }
 
+bool isRestDay(DateTime day, int? restWeekday) =>
+    restWeekday != null && day.weekday == restWeekday;
+
 int habitStreak({
   required List<int> weekdays,
   required Set<String> checkIns,
   required Set<String> frozen,
   required DateTime today,
+  int? restWeekday,
 }) {
   var streak = 0;
   var cursor = Day.dateOnly(today);
-  if (habitDue(weekdays, cursor) && !checkIns.contains(Day.key(cursor))) {
+  if (!isRestDay(cursor, restWeekday) &&
+      habitDue(weekdays, cursor) &&
+      !checkIns.contains(Day.key(cursor))) {
     cursor = cursor.subtract(const Duration(days: 1));
   }
   for (var i = 0; i < 500; i++) {
-    if (habitDue(weekdays, cursor)) {
-      final key = Day.key(cursor);
+    final key = Day.key(cursor);
+    if (isRestDay(cursor, restWeekday)) {
+      if (checkIns.contains(key) || frozen.contains(key)) streak += 1;
+    } else if (habitDue(weekdays, cursor)) {
       if (checkIns.contains(key) || frozen.contains(key)) {
         streak += 1;
       } else {
@@ -265,12 +281,17 @@ int chainStreak({
   required DateTime today,
   required bool doneToday,
   required bool Function(DateTime day) counts,
+  int? restWeekday,
 }) {
   var streak = 0;
   var cursor = Day.dateOnly(today);
-  if (!doneToday) cursor = cursor.subtract(const Duration(days: 1));
+  if (!doneToday && !isRestDay(cursor, restWeekday)) {
+    cursor = cursor.subtract(const Duration(days: 1));
+  }
   for (var i = 0; i < 500; i++) {
-    if (counts(cursor)) {
+    if (isRestDay(cursor, restWeekday)) {
+      if (counts(cursor)) streak += 1;
+    } else if (counts(cursor)) {
       streak += 1;
     } else {
       break;
@@ -286,6 +307,7 @@ class FreezePlan {
     required DateTime created,
     required int freezes,
     required bool Function(DateTime day) counts,
+    int? restWeekday,
   }) {
     final covered = <DateTime>[];
     var left = freezes;
@@ -293,6 +315,10 @@ class FreezePlan {
     final first = Day.dateOnly(created);
     for (var i = 0; i < 21 && left > 0; i++) {
       if (cursor.isBefore(first)) break;
+      if (isRestDay(cursor, restWeekday)) {
+        cursor = cursor.subtract(const Duration(days: 1));
+        continue;
+      }
       if (counts(cursor)) break;
       covered.add(cursor);
       left -= 1;

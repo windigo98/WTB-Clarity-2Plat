@@ -7,6 +7,7 @@ abstract class ClarityStore {
   Future<void> save(AppData data);
   Future<void> saveImage(String id, Uint8List bytes);
   Future<Uint8List?> loadImage(String id);
+  Future<void> clearImages();
 }
 
 class MemoryStore implements ClarityStore {
@@ -28,4 +29,9 @@ class MemoryStore implements ClarityStore {
 
   @override
   Future<Uint8List?> loadImage(String id) async => images[id];
+
+  @override
+  Future<void> clearImages() async {
+    images.clear();
+  }
 }

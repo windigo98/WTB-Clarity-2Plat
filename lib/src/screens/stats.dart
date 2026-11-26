@@ -11,7 +11,7 @@ class StatsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final today = Day.dateOnly(state.now);
+    final today = state.today;
     return ClarityPage(
       title: 'Character',
       body: ListView(
