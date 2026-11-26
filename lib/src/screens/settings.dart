@@ -156,7 +156,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (decoded is Map) json = Map<String, dynamic>.from(decoded);
     } catch (_) {}
     if (json == null) {
-      _say(context, 'That file is not a WTB Clarity backup.');
+      _say(context, 'That file is not a WTB Clarity 2plat backup.');
       return;
     }
     final parsed = parseBackup(json, nowMs: state.now.millisecondsSinceEpoch);

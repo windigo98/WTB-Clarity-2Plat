@@ -247,8 +247,8 @@ void main() {
     expect(parseBackup(schema1, nowMs: 1).photosMissing, isTrue);
 
     expect(await state.importBackup({'schema': 9}), contains('newer version'));
-    expect(await state.importBackup({'schema': 2, 'app': 'other', 'data': {}}), contains('not a WTB Clarity backup'));
-    expect(await state.importBackup({'hello': 'there'}), contains('not a WTB Clarity backup'));
+    expect(await state.importBackup({'schema': 2, 'app': 'other', 'data': {}}), contains('not a WTB Clarity 2plat backup'));
+    expect(await state.importBackup({'hello': 'there'}), contains('not a WTB Clarity 2plat backup'));
     expect(state.data.profile.name, 'Ada');
   });
 }

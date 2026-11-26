@@ -636,7 +636,7 @@ class ParsedBackup {
   final String? error;
 }
 
-const _notABackup = 'That file is not a WTB Clarity backup.';
+const _notABackup = 'That file is not a WTB Clarity 2plat backup.';
 
 ParsedBackup parseBackup(Map<String, dynamic> json, {required int nowMs}) {
   final schema = json['schema'];
