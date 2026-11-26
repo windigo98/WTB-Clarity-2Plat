@@ -23,5 +23,12 @@ void main() {
     await tester.pump();
     expect(state.data.habits.single.checkIns, isNotEmpty);
     expect(find.byIcon(Icons.check_circle), findsWidgets);
+    expect(find.text('Done today. Tap to undo.'), findsOneWidget);
+
+    await tester.tap(find.byKey(Key('check-${state.data.habits.single.id}')));
+    await tester.pump();
+    expect(state.data.habits.single.checkIns, isEmpty);
+    expect(state.data.profile.xp, 0);
+    expect(find.byIcon(Icons.circle_outlined), findsWidgets);
   });
 }

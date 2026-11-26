@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wtb_clarity/src/data/store.dart';
@@ -162,5 +163,92 @@ void main() {
     expect(later.data.profile.frozenDays, contains('2026-10-12'));
     expect(later.data.profile.freezes, 0);
     expect(later.streakFor(later.data.habits.single), greaterThan(0));
+  });
+
+  test('a weekly day off does not break a streak', () {
+    final thursday = DateTime(2026, 10, 15);
+    final checkIns = {'2026-10-13'};
+    final broken = habitStreak(
+      weekdays: const [],
+      checkIns: checkIns,
+      frozen: const {},
+      today: thursday,
+    );
+    final kept = habitStreak(
+      weekdays: const [],
+      checkIns: checkIns,
+      frozen: const {},
+      today: thursday,
+      restWeekday: DateTime.wednesday,
+    );
+    expect(broken, 0);
+    expect(kept, 1);
+  });
+
+  test('a 4 AM day start keeps a late night on the previous day', () async {
+    final state = AppState(
+      MemoryStore(),
+      const PurchaseGateway(),
+      const CrewGateway(),
+      clock: () => DateTime(2026, 10, 14, 3, 30),
+    );
+    await state.load();
+    expect(Day.key(state.today), '2026-10-14');
+    state.setDayStartHour(4);
+    expect(Day.key(state.today), '2026-10-13');
+    state.finishOnboarding(name: 'Ada', habitName: 'Read', glyph: '📖');
+    expect(state.checkIn(state.data.habits.single.id), isNull);
+    expect(state.data.habits.single.checkIns, contains('2026-10-13'));
+  });
+
+  test('export and import round-trip habits and a photo', () async {
+    final state = AppState(
+      MemoryStore(),
+      const PurchaseGateway(),
+      const CrewGateway(),
+      clock: () => DateTime(2026, 10, 13, 9),
+    );
+    await state.load();
+    state.finishOnboarding(name: 'Ada', habitName: 'Drink water', glyph: '💧');
+    state.checkIn(state.data.habits.single.id);
+    const photoId = 'photo-1';
+    final bytes = Uint8List.fromList([1, 2, 3, 4, 9]);
+    await state.store.saveImage(photoId, bytes);
+    state.images[photoId] = bytes;
+    state.data.tower.add(
+      TowerEntry(id: 'floor-1', kind: 'photo', caption: 'Tide', createdMs: 1, imageId: photoId),
+    );
+    await state.store.save(state.data);
+
+    final backup = await state.exportBackup();
+    expect(backup['schema'], 2);
+    expect(backup['app'], 'wtb-clarity');
+    final images = backup['images'] as Map;
+    expect(images[photoId], base64Encode(bytes));
+
+    state.data.profile.name = 'Someone else';
+    state.data.habits.clear();
+    state.images.clear();
+    await state.store.clearImages();
+
+    expect(await state.importBackup(Map<String, dynamic>.from(backup)), isNull);
+    expect(state.data.profile.name, 'Ada');
+    expect(state.data.habits.single.name, 'Drink water');
+    expect(state.images[photoId], bytes);
+
+    final again = await state.exportBackup();
+    final againImages = again['images'] as Map;
+    expect(againImages[photoId], images[photoId]);
+
+    final schema1 = state.exportJson();
+    state.data.profile.name = 'Lost';
+    expect(await state.importBackup(schema1), isNull);
+    expect(state.data.profile.name, 'Ada');
+    expect(parseBackup(schema1, nowMs: 1).photosMissing, isTrue);
+
+    expect(await state.importBackup({'schema': 9}), contains('newer version'));
+    expect(await state.importBackup({'schema': 2, 'app': 'other', 'data': {}}), contains('not a WTB Clarity backup'));
+    expect(await state.importBackup({'hello': 'there'}), contains('not a WTB Clarity backup'));
+    expect(state.data.profile.name, 'Ada');
   });
 }

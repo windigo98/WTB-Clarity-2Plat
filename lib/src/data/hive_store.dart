@@ -49,4 +49,9 @@ class HiveStore implements ClarityStore {
     if (value is List<int>) return Uint8List.fromList(value);
     return null;
   }
+
+  @override
+  Future<void> clearImages() async {
+    await _images.clear();
+  }
 }

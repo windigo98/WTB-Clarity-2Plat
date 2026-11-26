@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -57,11 +58,13 @@ class AppState extends ChangeNotifier {
     );
     data.profile.lives = life.lives;
     data.profile.livesAnchorMs = life.anchor;
+    final logical = today;
     final gaps = FreezePlan.coverGaps(
-      today: moment,
+      today: logical,
       created: DateTime.fromMillisecondsSinceEpoch(data.profile.createdMs),
       freezes: data.profile.freezes,
       counts: (day) => _counts(day),
+      restWeekday: data.profile.restWeekday,
     );
     for (final day in gaps) {
       data.profile.freezes -= 1;
@@ -76,7 +79,8 @@ class AppState extends ChangeNotifier {
         weekdays: habit.weekdays,
         checkIns: habit.checkIns.toSet(),
         frozen: frozen,
-        today: moment,
+        today: logical,
+        restWeekday: data.profile.restWeekday,
       );
       if (streak > habit.bestStreak) habit.bestStreak = streak;
     }
@@ -91,16 +95,21 @@ class AppState extends ChangeNotifier {
 
   Set<String> get _frozen => data.profile.frozenDays.toSet();
 
+  /// The calendar day the traveler is living, after the chosen day-start hour.
+  DateTime get today => Day.logical(now, data.profile.dayStartHour);
+
   int streakFor(Habit habit) => habitStreak(
     weekdays: habit.weekdays,
     checkIns: habit.checkIns.toSet(),
     frozen: _frozen,
-    today: now,
+    today: today,
+    restWeekday: data.profile.restWeekday,
   );
 
   int get mindStreakCount => chainStreak(
-    today: now,
-    doneToday: data.profile.mindDays.contains(Day.key(now)),
+    today: today,
+    doneToday: data.profile.mindDays.contains(Day.key(today)),
+    restWeekday: data.profile.restWeekday,
     counts: (day) {
       final key = Day.key(day);
       return data.profile.mindDays.contains(key) ||
@@ -109,8 +118,9 @@ class AppState extends ChangeNotifier {
   );
 
   int get accountStreak => chainStreak(
-    today: now,
-    doneToday: _counts(now),
+    today: today,
+    doneToday: _counts(today),
+    restWeekday: data.profile.restWeekday,
     counts: _counts,
   );
 
@@ -122,9 +132,9 @@ class AppState extends ChangeNotifier {
 
   String get title => XpRules.titleFor(level);
 
-  bool dueToday(Habit habit) => habitDue(habit.weekdays, now);
+  bool dueToday(Habit habit) => habitDue(habit.weekdays, today);
 
-  bool checkedToday(Habit habit) => habit.checkIns.contains(Day.key(now));
+  bool checkedToday(Habit habit) => habit.checkIns.contains(Day.key(today));
 
   int starsFor(String gameId, int level) => data.stars['$gameId:$level'] ?? 0;
 
@@ -133,11 +143,11 @@ class AppState extends ChangeNotifier {
 
   int get featuredDaily => featuredDailyLevel(
     streak: mindStreakCount,
-    doneToday: data.profile.mindDays.contains(Day.key(now)),
+    doneToday: data.profile.mindDays.contains(Day.key(today)),
     unlocked: (level) => levelUnlocked('daily', level),
   );
 
-  bool get dailyDoneToday => data.profile.mindDays.contains(Day.key(now));
+  bool get dailyDoneToday => data.profile.mindDays.contains(Day.key(today));
 
   int boosterCount(String id) => data.boosters[id] ?? 0;
 
@@ -258,7 +268,7 @@ class AppState extends ChangeNotifier {
     final habit = data.habits.where((h) => h.id == habitId).firstOrNull;
     if (habit == null) return 'That habit is gone.';
     if (!dueToday(habit)) return 'Not scheduled today.';
-    final key = Day.key(now);
+    final key = Day.key(today);
     if (habit.checkIns.contains(key)) return 'Already checked in today.';
     habit.checkIns.add(key);
     final streak = streakFor(habit);
@@ -270,6 +280,38 @@ class AppState extends ChangeNotifier {
     _note('check_in', '${habit.name} · day $key');
     _persist();
     return level > before ? 'level:${XpRules.titleFor(level)}' : null;
+  }
+
+  /// Takes back today's check-off, including the XP and Clarity it added.
+  String? undoCheckIn(String habitId) {
+    final habit = data.habits.where((h) => h.id == habitId).firstOrNull;
+    if (habit == null) return 'That habit is gone.';
+    final key = Day.key(today);
+    if (!habit.checkIns.contains(key)) return 'Nothing to undo.';
+    final streak = streakFor(habit);
+    final xp = XpRules.checkInXp(streak);
+    habit.checkIns.remove(key);
+    data.profile.xp = max(0, data.profile.xp - xp);
+    data.profile.clarity = max(0, data.profile.clarity - XpRules.checkInClarity);
+    final reason = 'Checked in: ${habit.name}';
+    final logged = data.xpLog.indexWhere((event) => event.reason == reason);
+    if (logged >= 0) data.xpLog.removeAt(logged);
+    data.crewNotes.removeWhere(
+      (note) => note.type == 'check_in' && note.summary.startsWith('${habit.name} · day $key'),
+    );
+    _persist();
+    return null;
+  }
+
+  void setRestWeekday(int? weekday) {
+    if (weekday != null && (weekday < DateTime.monday || weekday > DateTime.sunday)) return;
+    data.profile.restWeekday = weekday;
+    _persist();
+  }
+
+  void setDayStartHour(int hour) {
+    data.profile.dayStartHour = hour.clamp(0, 23);
+    _persist();
   }
 
   void addStep(String slot, String label, {String? habitId}) {
@@ -436,7 +478,7 @@ class AppState extends ChangeNotifier {
     var xp = XpRules.gameXp(safeStars, firstClear: first);
     var clarity = XpRules.gameClarity(safeStars);
     if (gameId == 'daily') {
-      final key = Day.key(now);
+      final key = Day.key(today);
       final already = data.profile.mindDays.contains(key);
       if (!already) data.profile.mindDays.add(key);
       if (!already) {
@@ -536,6 +578,114 @@ class AppState extends ChangeNotifier {
   }
 
   Map<String, Object?> exportJson() => data.toJson();
+
+  Future<Map<String, Object?>> exportBackup() async {
+    final images = <String, String>{};
+    for (final id in _imageIds()) {
+      final bytes = this.images[id] ?? await store.loadImage(id);
+      if (bytes == null || bytes.isEmpty) continue;
+      images[id] = base64Encode(bytes);
+    }
+    return {
+      'schema': 2,
+      'exportedAtMs': now.millisecondsSinceEpoch,
+      'app': 'wtb-clarity',
+      'data': data.toJson(),
+      'images': images,
+    };
+  }
+
+  Set<String> _imageIds() => {
+    for (final selfie in data.selfies) selfie.imageId,
+    for (final entry in data.tower)
+      if (entry.imageId != null) entry.imageId!,
+  };
+
+  /// Replaces on-device progress with a backup. Null means it worked.
+  Future<String?> importBackup(Map<String, dynamic> json) async {
+    final parsed = parseBackup(json, nowMs: now.millisecondsSinceEpoch);
+    if (parsed.error != null) return parsed.error;
+    data = parsed.data!;
+    images.clear();
+    await store.clearImages();
+    for (final entry in parsed.images.entries) {
+      images[entry.key] = entry.value;
+      await store.saveImage(entry.key, entry.value);
+    }
+    _reconcile();
+    await store.save(data);
+    await _hydrateImages();
+    notifyListeners();
+    return null;
+  }
+}
+
+class ParsedBackup {
+  const ParsedBackup._({
+    this.data,
+    this.images = const {},
+    this.schema = 0,
+    this.photosMissing = false,
+    this.error,
+  });
+
+  final AppData? data;
+  final Map<String, Uint8List> images;
+  final int schema;
+  final bool photosMissing;
+  final String? error;
+}
+
+const _notABackup = 'That file is not a WTB Clarity backup.';
+
+ParsedBackup parseBackup(Map<String, dynamic> json, {required int nowMs}) {
+  final schema = json['schema'];
+  final version = schema is int ? schema : schema is num ? schema.toInt() : null;
+  if (version == null) {
+    if (json['profile'] is Map) return _parseSchema1(json, nowMs);
+    return const ParsedBackup._(error: _notABackup);
+  }
+  if (version > 2) {
+    return const ParsedBackup._(error: 'That backup is from a newer version of this app.');
+  }
+  if (version == 2) {
+    if (json['app'] != 'wtb-clarity' || json['data'] is! Map) {
+      return const ParsedBackup._(error: _notABackup);
+    }
+    final dataJson = Map<String, dynamic>.from(json['data'] as Map);
+    if (dataJson['profile'] is! Map) {
+      return const ParsedBackup._(error: 'That file is missing a traveler profile.');
+    }
+    return ParsedBackup._(
+      data: AppData.fromJson(dataJson, nowMs: nowMs),
+      images: _decodeImages(json['images']),
+      schema: 2,
+    );
+  }
+  return _parseSchema1(json, nowMs);
+}
+
+ParsedBackup _parseSchema1(Map<String, dynamic> json, int nowMs) {
+  if (json['profile'] is! Map) {
+    return const ParsedBackup._(error: 'That file is missing a traveler profile.');
+  }
+  final data = AppData.fromJson(json, nowMs: nowMs);
+  final missing = data.selfies.isNotEmpty || data.tower.any((entry) => entry.imageId != null);
+  return ParsedBackup._(data: data, schema: 1, photosMissing: missing);
+}
+
+Map<String, Uint8List> _decodeImages(Object? raw) {
+  final images = <String, Uint8List>{};
+  if (raw is! Map) return images;
+  for (final entry in raw.entries) {
+    final encoded = entry.value;
+    if (encoded is! String || encoded.isEmpty) continue;
+    try {
+      final bytes = base64Decode(encoded);
+      if (bytes.isNotEmpty) images[entry.key.toString()] = bytes;
+    } catch (_) {}
+  }
+  return images;
 }
 
 String gameName(String id) => switch (id) {
